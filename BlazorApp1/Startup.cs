@@ -16,7 +16,6 @@ namespace BlazorApp1
 {
     public class Startup
     {
-        public string rootFolder;
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -32,15 +31,13 @@ namespace BlazorApp1
             services.AddServerSideBlazor();
             services.AddSingleton<WeatherForecastService>();
             services.AddDbContext<SampleContext>(
-                options => options.UseSqlServer($"Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename={rootFolder}\\Data\\Database1.mdf;Integrated Security=True"));
+                options => options.UseSqlServer(
+                    "Server=(localdb)\\mssqllocaldb;Trusted_Connection=True;MultipleActiveResultSets=true"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            Console.WriteLine("Content root path = " + Configuration.GetValue<string>(WebHostDefaults.ContentRootKey));
-            Console.WriteLine("Current dir = " + System.IO.Directory.GetCurrentDirectory());
-            rootFolder = env.ContentRootPath.Substring(0, env.ContentRootPath.LastIndexOf(@"\BlazorApp1\", StringComparison.Ordinal) + @"\BlazorApp1".Length);
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
