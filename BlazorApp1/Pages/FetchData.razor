@@ -1,0 +1,70 @@
+﻿@page "/fetchdata"
+@using System.Threading
+@using BlazorApp1.Data
+@inject WeatherForecastService ForecastService
+@inherits OwningComponentBase<Database.SampleContext>
+<h1>Weather forecast</h1>
+
+<p>This component demonstrates fetching data from a service.</p>
+<button @onclick="Fetch">Fetch Again</button>
+<button @onclick="CancelAndFetch">Cancel &amp; Fetch</button>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Temp. (C)</th>
+                <th>Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private WeatherForecast[] forecasts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
+        
+    }
+
+    private async void Fetch()
+    {
+        forecasts = null;
+        await Service.LongTask();
+        forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private CancellationTokenSource _tokenSource = new CancellationTokenSource();
+
+    private async void CancelAndFetch()
+    {
+        _tokenSource.Cancel();
+        _tokenSource = new CancellationTokenSource();
+        forecasts = null;
+        await Service.LongTask(_tokenSource.Token);
+        if (_tokenSource.IsCancellationRequested) return;
+        forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
+        await InvokeAsync(StateHasChanged);
+    }
+}
