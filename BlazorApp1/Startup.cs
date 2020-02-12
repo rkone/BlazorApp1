@@ -9,7 +9,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using BlazorApp1.Data;
-using Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlazorApp1
@@ -33,6 +32,7 @@ namespace BlazorApp1
             services.AddDbContext<SampleContext>(
                 options => options.UseSqlServer(
                     "Server=(localdb)\\mssqllocaldb;Trusted_Connection=True;MultipleActiveResultSets=true"));
+            services.AddScoped<ContextFactory>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

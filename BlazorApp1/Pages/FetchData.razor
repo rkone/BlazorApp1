@@ -2,12 +2,14 @@
 @using System.Threading
 @using BlazorApp1.Data
 @inject WeatherForecastService ForecastService
-@inherits OwningComponentBase<Database.SampleContext>
+@inject ContextFactory Factory
+@inherits OwningComponentBase<SampleContext>
 <h1>Weather forecast</h1>
 
 <p>This component demonstrates fetching data from a service.</p>
 <button @onclick="Fetch">Fetch Again</button>
 <button @onclick="CancelAndFetch">Cancel &amp; Fetch</button>
+<button @onclick="FactoryFetch">Factory Fetch</button>
 
 @if (forecasts == null)
 {
@@ -44,7 +46,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
-        
     }
 
     private async void Fetch()
@@ -55,16 +56,34 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private CancellationTokenSource _tokenSource = new CancellationTokenSource();
-
+    private CancellationTokenSource _tokenSource;
     private async void CancelAndFetch()
     {
-        _tokenSource.Cancel();
-        _tokenSource = new CancellationTokenSource();
         forecasts = null;
-        await Service.LongTask(_tokenSource.Token);
-        if (_tokenSource.IsCancellationRequested) return;
+        _tokenSource?.Cancel();
+        _tokenSource = new CancellationTokenSource();
+        var tokenSource = _tokenSource;
+        await Service.LongTask(tokenSource.Token);
+        if (tokenSource.IsCancellationRequested) return;
         forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
         await InvokeAsync(StateHasChanged);
+    }
+
+    private int _threadId = 0;
+    private async void FactoryFetch()
+    {
+        _threadId += 1;
+        var id = _threadId;
+
+        var ctx = Factory.Generate();
+        forecasts = null;
+        await ctx.LongTask();
+        forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
+        ctx.Dispose();
+        if (_threadId == id)
+        {
+            _threadId = 0;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 }
